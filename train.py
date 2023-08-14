@@ -106,12 +106,13 @@ for e in range(args.epochs):
     plot_path = os.path.join(args.plot_path, str(e))
     os.makedirs(plot_path, exist_ok=True)
     with torch.no_grad():
-        x = torch.randn(args.num_sample, 28 * 28).to(args.device)
+        x = torch.randn(args.num_sample, 1, 28, 28).to(args.device)
         for t in reversed(range(num_timesteps)):
             t_tensor = torch.tensor([t], dtype=torch.float).to(args.device)
             x = (x - betas[t] * model(x, t_tensor) / torch.sqrt(1 - alpha_bars[t])) / torch.sqrt(1 - betas[t])
             if t != 0:
                 x += torch.exp(0.5 * torch.log(betas[t])) * torch.randn_like(x)
             if t % args.plot_every == 0:
-                torchvision.utils.save_image(x.view(-1, 1, 28, 28), os.path.join(plot_path, f"sample_{t}.png"), padding=1, nrow=int(args.num_sample ** 0.5))
+                torchvision.utils.save_image(x, os.path.join(plot_path, f"sample_{t}.png"), padding=1, nrow=int(args.num_sample ** 0.5))
+
 
