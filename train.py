@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 from model import Model
 from utils import get_beta_schedule, load_mnist
+from config import config
 
 parser = argparse.ArgumentParser(description="yo")
 parser.add_argument("--seed", type=int, default=1234, help="Random seed")
@@ -20,33 +21,6 @@ parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
 parser.add_argument("--device", type=str, default="cuda", help="Device")
 parser.add_argument("--num-sample", type=int, default=36, help="Number of samples")
 args = parser.parse_args()
-
-config = {"model": {"type": "simple",
-                    "in_channels": 1,
-                    "out_ch": 1,
-                    "ch": 128,
-                    "ch_mult": [1, 2, 2],
-                    "num_res_blocks": 2,
-                    "attn_resolutions": [14, ],
-                    "dropout": 0.1,
-                    "resamp_with_conv": True,
-                   }, 
-          "data":  {"dataset": "MNIST",
-                    "image_size": 28,
-                    "channels": 3,
-                   },
-          "diffusion": {
-                        "beta_schedule": "linear",
-                        "beta_start": 0.0001,
-                        "beta_end": 0.02,
-                        "num_diffusion_timesteps": 1000,
-                       },
-         }
-
-config = argparse.Namespace(**config)
-config.model = argparse.Namespace(**config.model)
-config.data = argparse.Namespace(**config.data)
-config.diffusion = argparse.Namespace(**config.diffusion)
 
 train_loader, test_loader = load_mnist(args)
 model = Model(config).to(args.device)
@@ -62,6 +36,7 @@ num_timesteps = config.diffusion.num_diffusion_timesteps
 
 for e in range(args.epochs):
     # train
+    model.train()
     for x, _ in tqdm(train_loader):
         optimizer.zero_grad()
         x = x.to(args.device)
@@ -81,6 +56,7 @@ for e in range(args.epochs):
 
     # test
     print("Testing...")
+    model.eval()
     with torch.no_grad():
         eval_loss = 0.
         for batch_idx, (x, _) in enumerate(test_loader):
@@ -100,6 +76,7 @@ for e in range(args.epochs):
 
     # sample
     print("Sampling...")
+    model.eval()
     plot_path = os.path.join(args.plot_path, str(e))
     os.makedirs(plot_path, exist_ok=True)
     with torch.no_grad():
